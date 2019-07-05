@@ -33,26 +33,24 @@ func (r *RNG) reseed() {
 
 // Read fills b with random data. It always returns len(b), nil.
 func (r *RNG) Read(b []byte) (int, error) {
-	if len(b) > len(r.buf) {
-		// for large b, avoid reseeding multiple times; instead, reseed once to
-		// generate a temporary key, then write directly into b using that key
+	if len(b) <= len(r.buf[r.n:]) {
+		// can fill b entirely from buffer
+		copy(b, r.buf[r.n:])
+		erase(r.buf[r.n : r.n+len(b)])
+		r.n += len(b)
+	} else if len(b) <= len(r.buf[r.n:])+len(r.buf[chacha.KeySize:]) {
+		// b is larger than current buffer, but can be filled after a reseed
+		//
+		// NOTE: no need to erase before reseeding
+		n := copy(b, r.buf[r.n:])
 		r.reseed()
-		tmpKey := r.buf[r.n : r.n+chacha.KeySize]
+		r.Read(b[n:])
+	} else {
+		// filling b would require multiple reseeds; instead, generate a
+		// temporary key, then write directly into b using that key
+		tmpKey := make([]byte, chacha.KeySize)
+		r.Read(tmpKey)
 		chacha.XORKeyStream(b, b, make([]byte, chacha.NonceSize), tmpKey, r.rounds)
-		erase(tmpKey)
-		r.n += len(tmpKey)
-		return len(b), nil
-	}
-	// for small b, read from the buffer of previously-generated entropy
-	n := 0
-	for n < len(b) {
-		if r.n == len(r.buf) {
-			r.reseed()
-		}
-		c := copy(b[n:], r.buf[r.n:])
-		erase(r.buf[r.n : r.n+c])
-		n += c
-		r.n += c
 	}
 	return len(b), nil
 }
@@ -115,8 +113,15 @@ func (r *RNG) Perm(n int) []int {
 
 // NewCustom returns a new RNG instance seeded with the provided entropy and
 // using the specified buffer size and number of ChaCha rounds. It panics if
-// len(seed) != 32 or if rounds is not 8, 12 or 20.
+// len(seed) != 32, bufsize < 32, or rounds != 8, 12 or 20.
 func NewCustom(seed []byte, bufsize int, rounds int) *RNG {
+	if len(seed) != 32 {
+		panic("frand: invalid seed size")
+	} else if bufsize < chacha.KeySize {
+		panic("frand: bufsize must be at least 32")
+	} else if !(rounds == 8 || rounds == 12 || rounds == 20) {
+		panic("frand: rounds must be 8, 12, or 20")
+	}
 	r := &RNG{
 		buf:    make([]byte, chacha.KeySize+bufsize),
 		rounds: rounds,

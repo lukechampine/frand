@@ -70,13 +70,13 @@ and thus no risk of introducing a vulnerability.
 
 | Benchmark                | `crypto/rand` | `fastrand` | `frand`    | `math` (insecure) |
 |--------------------------|---------------|------------|------------|-------------------|
-| Read (32b)               | 59 MB/s       | 215 MB/s   | 909 MB/s   | 634.21 MB/s       |
-| Read (32b, concurrent)   | 70 MB/s       | 615 MB/s   | 3379 MB/s  | 198.97 MB/s       |
-| Read (512kb)             | 239 MB/s      | 452 MB/s   | 5071 MB/s  | 965.85 MB/s       |
-| Read (512kb, concurrent) | 191 MB/s      | 1599 MB/s  | 18965 MB/s | 958.01 MB/s       |
-| Intn (n =~ 4e18)         | 725 ns/op     | 210 ns/op  | 49 ns/op   | 20 ns/op          |
-| BigIntn (n = 2^630)      | 1013 ns/op    | 468 ns/op  | 228 ns/op  | 295 ns/op         |
-| Perm (n = 32)            | 17197 ns/op   | 5021 ns/op | 1026 ns/op | 789 ns/op         |
+| Read (32b)               | 59 MB/s       | 215 MB/s   | 964 MB/s   | 634.21 MB/s       |
+| Read (32b, concurrent)   | 70 MB/s       | 615 MB/s   | 3566 MB/s  | 198.97 MB/s       |
+| Read (512kb)             | 239 MB/s      | 452 MB/s   | 5094 MB/s  | 965.85 MB/s       |
+| Read (512kb, concurrent) | 191 MB/s      | 1599 MB/s  | 19665 MB/s | 958.01 MB/s       |
+| Intn (n =~ 4e18)         | 725 ns/op     | 210 ns/op  | 45 ns/op   | 20 ns/op          |
+| BigIntn (n = 2^630)      | 1013 ns/op    | 468 ns/op  | 223 ns/op  | 295 ns/op         |
+| Perm (n = 32)            | 17197 ns/op   | 5021 ns/op | 954 ns/op  | 789 ns/op         |
 
 Benchmark details:
 
