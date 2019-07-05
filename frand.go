@@ -48,6 +48,10 @@ func (r *RNG) Read(b []byte) (int, error) {
 	} else {
 		// filling b would require multiple reseeds; instead, generate a
 		// temporary key, then write directly into b using that key
+		//
+		// NOTE: this means RNG output depends on buffer size; calling Read once
+		// on b produces different output than calling Read 4 times on b/4.
+		// Clients who want deterministic output need to be aware of this.
 		tmpKey := make([]byte, chacha.KeySize)
 		r.Read(tmpKey)
 		chacha.XORKeyStream(b, b, make([]byte, chacha.NonceSize), tmpKey, r.rounds)
