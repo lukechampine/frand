@@ -21,6 +21,37 @@ convenient to use than `crypto/rand`, as its methods cannot return errors, and
 helper methods such as `Intn` and `Perm` are provided. In short, it is as fast
 and convenient as `math/rand`, but far more secure.
 
+## Design
+
+`frand` closely follows the FKE-CSPRNG design linked above. The generator
+maintains a buffer consisting of a ChaCha key followed by random data. When a
+caller requests data, the generator returns data from its buffer, and
+immediately overwrites that portion of the buffer with zeros. If the buffer is
+exhausted, the generator "refills" the buffer by xoring it with the ChaCha key's
+keystream; thus, the key is only used once, and immediately overwrites itself.
+This provides [forward secrecy](https://en.wikipedia.org/wiki/Forward_secrecy):
+even if an attacker learns the secret key, they cannot learn what data was
+previously output from the generator.
+
+One optimization is implemented. If the caller requests a large amount of data
+(larger than the generator's buffer), the generator does not repeatedly fill and
+drain its buffer. Instead, it requests 32 bytes from itself, and uses this as a
+ChaCha key to directly generate the amount of data requested. The key is then
+overwritten with zeros.
+
+The default generator uses ChaCha12. ChaCha8 is significantly weaker without
+being much faster; ChaCha20 is significantly slower without being much stronger.
+
+At `init` time, a "master" generator is created using an initial key sourced
+from `crypto/rand`. New generators source their initial keys from this master
+generator. Following [djb's recommendation](https://blog.cr.yp.to/20140205-entropy.html),
+the generator never mixes in new entropy.
+
+Calls to global functions like `Read` and `Intn` are serviced by a `sync.Pool`
+of generators derived from the master generator. This allows `frand` to scale
+near-linearly across CPU cores, which is what makes it so much faster than
+`crypto/rand` and `math/rand` in parallel benchmarks.
+
 
 ## Security
 

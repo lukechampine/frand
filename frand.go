@@ -155,9 +155,6 @@ var masterMu sync.Mutex
 // RNG, which itself is seeded from crypto/rand. This means the frand package
 // only reads system entropy once, at startup.
 func New() *RNG {
-	// ChaCha12 is a good balance of security and performance. ChaCha8 is
-	// significantly weaker without being much faster; ChaCha20 is significant
-	// slower without being much stronger.
 	masterMu.Lock()
 	defer masterMu.Unlock()
 	return NewCustom(masterRNG.Bytes(32), 1024, 12)
