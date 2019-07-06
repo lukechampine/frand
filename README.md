@@ -8,61 +8,41 @@ frand
 go get lukechampine.com/frand
 ```
 
-`frand` is a fast userspace CSPRNG. The RNG produces its output from
-[ChaCha](https://en.wikipedia.org/wiki/Salsa20#ChaCha_variant) keystreams. The
-initial cipher key is derived from system entropy (via `crypto/rand`). Since
-only one syscall is required to initialize the RNG, `frand` can generate
-randomness much faster than `crypto/rand`, and generation cannot fail.
+`frand` is a [fast-key-erasure
+CSPRNG](https://blog.cr.yp.to/20170723-random.html) in userspace. Its output is
+sourced from the keystream of a [ChaCha](https://en.wikipedia.org/wiki/Salsa20#ChaCha_variant)
+cipher, much like the kernel CSPRNG in Linux and BSD. The initial cipher key is
+derived from the kernel CSPRNG (via `crypto/rand`), after which [no new entropy is ever mixed in](https://blog.cr.yp.to/20140205-entropy.html).
 
-`frand` is based on [`fastrand`](https://gitlab.com/NebulousLabs/fastrand), but
-generates its randomness from the ChaCha cipher instead of repeated BLAKE-2b
-hashing. `frand` is 5-10x faster than `fastrand` and 5-100x faster than
-`crypto/rand`. Its speed makes it a viable replacement even for `math/rand` when
-maximum performance is desired.
-
-
-## Misconceptions
+The primary advantage of `frand` over `crypto/rand` is speed: when generating
+large amounts of random data, `frand` is 20x faster than `crypto/rand`, and over
+100x faster when generating data in parallel. `frand` is also far more
+convenient to use than `crypto/rand`, as its methods cannot return errors, and
+helper methods such as `Intn` and `Perm` are provided. In short, it is as fast
+and convenient as `math/rand`, but far more secure.
 
 
-**Don't roll your own crypto!**
+## Security
 
-There isn't any novel crypto here; we're just reading the output of a ChaCha
-stream. The only non-trivial part is the key erasure: we overwrite the key with
-the cipher output after each use, which provides forward secrecy. djb describes
-the construction [here](https://blog.cr.yp.to/20170723-random.html), noting that
-it "certainly isn't new."
+Some may object to substituting a userspace CSPRNG for the kernel's
+CSPRNG. Certain userspace CSPRNGs (e.g. [OpenSSL](https://research.swtch.com/openssl))
+have contained bugs, causing serious vulnerabilities. `frand` has some
+advantages over these CSPRNGs: it never mixes in new entropy, it doesn't
+maintain an "entropy estimate," and its implementation is extremely simple.
+Still, if you only need to generate a handful of secret keys, you should
+probably stick with `crypto/rand`.
 
-
-**The output won't be as random as /dev/random!**
-
-`/dev/random`, `/dev/urandom`, and `getentropy(2)` all generate their output the
-same way `frand` does: from a ChaCha keystream seeded with 256 bits of
-unpredictable entropy. Without access to the RNG state, it is not possible for
-an attacker to distinguish between output from `frand` and output from your OS's
-RNG.
-
-
-**The RNG state can be read or written with side-channel attacks!**
-
-Yes, the key resides in memory, so it could be read using an attack like
-[RAMBleed](https://rambleed.com) or written using an attack like
-[RowHammer](https://en.wikipedia.org/wiki/Row_hammer). But consider that this
-applies to every other piece of secret data in your program as well: session
-keys, encyption keys, passwords, etc. If attackers can directly read and write
-your RAM, you likely have bigger problems to contend with.
-
-
-**CSPRNGs don't need to be fast!**
-
-If CSPRNGs are slow, people will only use them to generate key material, and
-will use less secure PRNGs like `math/rand` for everything else. There is no
-downside to using a fast CSPRNG for these applications instead, and considerable
-upside (namely, better protection against unforeseen attacks).
-
-Another perspective: when programmers today need randomness, they have to decide
-between "strong but slow" randomness and "weak but fast" randomness. If there
-were a "strong and fast" option, there would be no need to make such a decision,
-and thus no risk of introducing a vulnerability.
+Even if you aren't comfortable using `frand` for critical secrets, you should
+still use it everywhere you would normally use an insecure PRNG like
+`math/rand`. Programmers frequently use `math/rand` because it is faster and
+more convenient than `crypto/rand` (e.g. when generating random test cases), and
+only use `crypto/rand` when "true" randomness is required. This is an
+unfortunate state of affairs, because misuse of `math/rand` can lead to bugs or
+vulnerabilities. For example, if the global `math/rand` generator is left
+unseeded, the "random" test cases will be identical from run to run. More
+seriously, using `math/rand` to salt a hash table may make your program
+[vulnerable to denial of service attacks](https://stackoverflow.com/questions/52184366/why-does-hashmap-need-a-cryptographically-secure-hashing-function).
+Substituting `frand` for `math/rand` would avoid both of these outcomes.
 
 
 ## Benchmarks

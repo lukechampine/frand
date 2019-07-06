@@ -11,11 +11,13 @@ import (
 	"github.com/aead/chacha20/chacha"
 )
 
-func erase(p []byte) {
+func copyAndErase(dst, src []byte) int {
+	n := copy(dst, src)
 	// compiles to memclr
-	for i := range p {
-		p[i] = 0
+	for i := range src[:n] {
+		src[i] = 0
 	}
+	return n
 }
 
 // An RNG is a cryptographically-strong RNG constructed from the ChaCha stream
@@ -26,32 +28,25 @@ type RNG struct {
 	rounds int
 }
 
-func (r *RNG) reseed() {
-	chacha.XORKeyStream(r.buf, r.buf, make([]byte, chacha.NonceSize), r.buf[:chacha.KeySize], r.rounds)
-	r.n = chacha.KeySize
-}
-
 // Read fills b with random data. It always returns len(b), nil.
+//
+// For performance reasons, calling Read once on a "large" buffer (larger than
+// the RNG's internal buffer) will produce different output than calling Read
+// multiple times on smaller buffers. If deterministic output is required,
+// clients should call Read in a loop; when copying to an io.Writer, use
+// io.CopyBuffer instead of io.Copy.
 func (r *RNG) Read(b []byte) (int, error) {
 	if len(b) <= len(r.buf[r.n:]) {
 		// can fill b entirely from buffer
-		copy(b, r.buf[r.n:])
-		erase(r.buf[r.n : r.n+len(b)])
-		r.n += len(b)
+		r.n += copyAndErase(b, r.buf[r.n:])
 	} else if len(b) <= len(r.buf[r.n:])+len(r.buf[chacha.KeySize:]) {
 		// b is larger than current buffer, but can be filled after a reseed
-		//
-		// NOTE: no need to erase before reseeding
 		n := copy(b, r.buf[r.n:])
-		r.reseed()
-		r.Read(b[n:])
+		chacha.XORKeyStream(r.buf, r.buf, make([]byte, chacha.NonceSize), r.buf[:chacha.KeySize], r.rounds)
+		r.n = chacha.KeySize + copyAndErase(b[n:], r.buf[chacha.KeySize:])
 	} else {
 		// filling b would require multiple reseeds; instead, generate a
 		// temporary key, then write directly into b using that key
-		//
-		// NOTE: this means RNG output depends on buffer size; calling Read once
-		// on b produces different output than calling Read 4 times on b/4.
-		// Clients who want deterministic output need to be aware of this.
 		tmpKey := make([]byte, chacha.KeySize)
 		r.Read(tmpKey)
 		chacha.XORKeyStream(b, b, make([]byte, chacha.NonceSize), tmpKey, r.rounds)
@@ -119,20 +114,20 @@ func (r *RNG) Perm(n int) []int {
 // using the specified buffer size and number of ChaCha rounds. It panics if
 // len(seed) != 32, bufsize < 32, or rounds != 8, 12 or 20.
 func NewCustom(seed []byte, bufsize int, rounds int) *RNG {
-	if len(seed) != 32 {
+	if len(seed) != chacha.KeySize {
 		panic("frand: invalid seed size")
 	} else if bufsize < chacha.KeySize {
 		panic("frand: bufsize must be at least 32")
 	} else if !(rounds == 8 || rounds == 12 || rounds == 20) {
 		panic("frand: rounds must be 8, 12, or 20")
 	}
-	r := &RNG{
-		buf:    make([]byte, chacha.KeySize+bufsize),
+	buf := make([]byte, chacha.KeySize+bufsize)
+	chacha.XORKeyStream(buf, buf, make([]byte, chacha.NonceSize), seed, rounds)
+	return &RNG{
+		buf:    buf,
+		n:      chacha.KeySize,
 		rounds: rounds,
 	}
-	copy(r.buf, seed)
-	r.reseed()
-	return r
 }
 
 // "master" RNG, seeded from crypto/rand; RNGs returned by New derive their seed
