@@ -11,12 +11,16 @@ import (
 	"github.com/aead/chacha20/chacha"
 )
 
+func erase(b []byte) {
+	// compiles to memclr
+	for i := range b {
+		b[i] = 0
+	}
+}
+
 func copyAndErase(dst, src []byte) int {
 	n := copy(dst, src)
-	// compiles to memclr
-	for i := range src[:n] {
-		src[i] = 0
-	}
+	erase(src[:n])
 	return n
 }
 
@@ -34,7 +38,9 @@ type RNG struct {
 // the RNG's internal buffer) will produce different output than calling Read
 // multiple times on smaller buffers. If deterministic output is required,
 // clients should call Read in a loop; when copying to an io.Writer, use
-// io.CopyBuffer instead of io.Copy.
+// io.CopyBuffer instead of io.Copy. Callers should also be aware that b is
+// xored with random data, not directly overwritten; this means that the new
+// contents of b depend on its previous contents.
 func (r *RNG) Read(b []byte) (int, error) {
 	if len(b) <= len(r.buf[r.n:]) {
 		// can fill b entirely from buffer
@@ -50,6 +56,7 @@ func (r *RNG) Read(b []byte) (int, error) {
 		tmpKey := make([]byte, chacha.KeySize)
 		r.Read(tmpKey)
 		chacha.XORKeyStream(b, b, make([]byte, chacha.NonceSize), tmpKey, r.rounds)
+		erase(tmpKey)
 	}
 	return len(b), nil
 }
