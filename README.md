@@ -11,8 +11,8 @@ go get lukechampine.com/frand
 `frand` is a [fast-key-erasure
 CSPRNG](https://blog.cr.yp.to/20170723-random.html) in userspace. Its output is
 sourced from the keystream of a [ChaCha](https://en.wikipedia.org/wiki/Salsa20#ChaCha_variant)
-cipher, much like the kernel CSPRNG in Linux and BSD. The initial cipher key is
-derived from the kernel CSPRNG (via `crypto/rand`), after which [no new entropy is ever mixed in](https://blog.cr.yp.to/20140205-entropy.html).
+cipher, much like the CSPRNG in the Linux and BSD kernels. The initial cipher key is
+derived from the kernel CSPRNG, after which [no new entropy is ever mixed in](https://blog.cr.yp.to/20140205-entropy.html).
 
 The primary advantage of `frand` over `crypto/rand` is speed: when generating
 large amounts of random data, `frand` is 20x faster than `crypto/rand`, and over
@@ -25,7 +25,7 @@ and convenient as `math/rand`, but far more secure.
 
 `frand` closely follows the FKE-CSPRNG design linked above. The generator
 maintains a buffer consisting of a ChaCha key followed by random data. When a
-caller requests data, the generator returns data from its buffer, and
+caller requests data, the generator fills the request from its buffer, and
 immediately overwrites that portion of the buffer with zeros. If the buffer is
 exhausted, the generator "refills" the buffer by xoring it with the ChaCha key's
 keystream; thus, the key is only used once, and immediately overwrites itself.
@@ -65,21 +65,20 @@ probably stick with `crypto/rand`.
 
 Even if you aren't comfortable using `frand` for critical secrets, you should
 still use it everywhere you would normally use an insecure PRNG like
-`math/rand`. Programmers frequently use `math/rand` because it is faster and
-more convenient than `crypto/rand` (e.g. when generating random test cases), and
-only use `crypto/rand` when "true" randomness is required. This is an
-unfortunate state of affairs, because misuse of `math/rand` can lead to bugs or
-vulnerabilities. For example, if the global `math/rand` generator is left
-unseeded, the "random" test cases will be identical from run to run. More
-seriously, using `math/rand` to salt a hash table may make your program
-[vulnerable to denial of service attacks](https://stackoverflow.com/questions/52184366/why-does-hashmap-need-a-cryptographically-secure-hashing-function).
+`math/rand`. Go programmers frequently use `math/rand` because it is faster and
+more convenient than `crypto/rand`, and only use `crypto/rand` when "true"
+randomness is required. This is an unfortunate state of affairs, because misuse
+of `math/rand` can lead to bugs or vulnerabilities. For example, using
+`math/rand` to generate "random" test cases will produce identical coverage from
+run-to-run if the generator is left unseeded. More seriously, using `math/rand`
+to salt a hash table may make your program [vulnerable to denial of service attacks](https://stackoverflow.com/questions/52184366/why-does-hashmap-need-a-cryptographically-secure-hashing-function).
 Substituting `frand` for `math/rand` would avoid both of these outcomes.
 
 
 ## Benchmarks
 
 
-| Benchmark                | `crypto/rand` | `fastrand` | `frand`    | `math` (insecure) |
+| Benchmark                | `crypto/rand` | [`fastrand`](https://gitlab.com/NebulousLabs/fastrand) | `frand`    | `math` (insecure) |
 |--------------------------|---------------|------------|------------|-------------------|
 | Read (32b)               | 59 MB/s       | 215 MB/s   | 964 MB/s   | 634.21 MB/s       |
 | Read (32b, concurrent)   | 70 MB/s       | 615 MB/s   | 3566 MB/s  | 198.97 MB/s       |
