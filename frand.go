@@ -71,7 +71,7 @@ func (r *RNG) Bytes(n int) []byte {
 // Uint64n returns a uniform random uint64 in [0,n). It panics if n == 0.
 func (r *RNG) Uint64n(n uint64) uint64 {
 	if n == 0 {
-		panic("fastrand: argument to Uint64n is 0")
+		panic("frand: argument to Uint64n is 0")
 	}
 	// To eliminate modulo bias, keep selecting at random until we fall within
 	// a range that is evenly divisible by n.
@@ -92,7 +92,7 @@ again:
 // Intn returns a uniform random int in [0,n). It panics if n <= 0.
 func (r *RNG) Intn(n int) int {
 	if n <= 0 {
-		panic("fastrand: argument to Intn is <= 0: " + strconv.Itoa(n))
+		panic("frand: argument to Intn is <= 0: " + strconv.Itoa(n))
 	}
 	// NOTE: since n is at most math.MaxUint64/2, max is minimized when:
 	//    n = math.MaxUint64/4 + 1 -> max = math.MaxUint64 - math.MaxUint64/4
