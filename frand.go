@@ -222,7 +222,4 @@ var Reader rngReader
 
 type rngReader struct{}
 
-func (rngReader) Read(b []byte) (int, error) {
-	Read(b)
-	return len(b), nil
-}
+func (rngReader) Read(b []byte) (int, error) { return Read(b) }
