@@ -106,6 +106,11 @@ func (r *RNG) BigIntn(n *big.Int) *big.Int {
 	return i
 }
 
+// Float64 returns a random float64 in [0,1).
+func (r *RNG) Float64() float64 {
+	return float64(r.Uint64n(1<<53)) / (1 << 53)
+}
+
 // Perm returns a random permutation of the integers [0,n). It panics if n < 0.
 func (r *RNG) Perm(n int) []int {
 	m := make([]int, n)
@@ -206,6 +211,14 @@ func BigIntn(n *big.Int) *big.Int {
 	i := r.BigIntn(n)
 	rngpool.Put(r)
 	return i
+}
+
+// Float64 returns a random float64 in [0,1).
+func Float64() float64 {
+	r := rngpool.Get().(*RNG)
+	f := r.Float64()
+	rngpool.Put(r)
+	return f
 }
 
 // Perm returns a random permutation of the integers [0,n). It panics if n < 0.

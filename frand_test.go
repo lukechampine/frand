@@ -316,6 +316,13 @@ func BenchmarkBigCryptoIntLarge(b *testing.B) {
 	}
 }
 
+// BenchmarkFloat64 benchmarks the speed of Float64.
+func BenchmarkFloat64(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		Float64()
+	}
+}
+
 // BenchmarkPerm benchmarks the speed of Perm for small slices.
 func BenchmarkPerm32(b *testing.B) {
 	for i := 0; i < b.N; i++ {
