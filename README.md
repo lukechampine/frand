@@ -78,15 +78,15 @@ Substituting `frand` for `math/rand` would avoid both of these outcomes.
 ## Benchmarks
 
 
-| Benchmark                | `crypto/rand` | [`fastrand`](https://gitlab.com/NebulousLabs/fastrand) | `frand`    | `math` (insecure) |
-|--------------------------|---------------|------------|------------|-------------------|
-| Read (32b)               | 59 MB/s       | 215 MB/s   | 964 MB/s   | 634.21 MB/s       |
-| Read (32b, concurrent)   | 70 MB/s       | 615 MB/s   | 3566 MB/s  | 198.97 MB/s       |
-| Read (512kb)             | 239 MB/s      | 452 MB/s   | 5094 MB/s  | 965.85 MB/s       |
-| Read (512kb, concurrent) | 191 MB/s      | 1599 MB/s  | 19665 MB/s | 958.01 MB/s       |
-| Intn (n =~ 4e18)         | 725 ns/op     | 210 ns/op  | 45 ns/op   | 20 ns/op          |
-| BigIntn (n = 2^630)      | 1013 ns/op    | 468 ns/op  | 223 ns/op  | 295 ns/op         |
-| Perm (n = 32)            | 17197 ns/op   | 5021 ns/op | 954 ns/op  | 789 ns/op         |
+| Benchmark                | `frand`        |`crypto/rand`  | `math/rand` (insecure) | [`fastrand`](https://gitlab.com/NebulousLabs/fastrand) |
+|--------------------------|----------------|---------------|------------------------|------------|
+| Read (32b)               | **964 MB/s**   | 59 MB/s       | 634.21 MB/s            | 215 MB/s   |
+| Read (32b, concurrent)   | **3566 MB/s**  | 70 MB/s       | 198.97 MB/s            | 615 MB/s   |
+| Read (512kb)             | **5094 MB/s**  | 239 MB/s      | 965.85 MB/s            | 452 MB/s   |
+| Read (512kb, concurrent) | **19665 MB/s** | 191 MB/s      | 958.01 MB/s            | 1599 MB/s  |
+| Intn (n =~ 4e18)         | 45 ns/op       | 725 ns/op     | **20 ns/op**           | 210 ns/op  |
+| BigIntn (n = 2^630)      | **223 ns/op**  | 1013 ns/op    | 295 ns/op              | 468 ns/op  |
+| Perm (n = 32)            | 954 ns/op      | 17197 ns/op   | **789 ns/op**          | 5021 ns/op |
 
 Benchmark details:
 
