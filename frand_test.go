@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/big"
 	mrand "math/rand"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -259,7 +260,7 @@ func TestShuffle(t *testing.T) {
 	chars := "abcde" // string to be permuted
 	createPerm := func() string {
 		s := []byte(chars)
-		Shuffle(len(s), func(i, j int) { s[i], s[j] = s[j], s[i] })
+		Shuffle(len(s), reflect.Swapper(s))
 		return string(s)
 	}
 

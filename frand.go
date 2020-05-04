@@ -122,7 +122,8 @@ func (r *RNG) Perm(n int) []int {
 	return m
 }
 
-// Shuffle randomly permutes n elements by calling swap on 0 <= i, j < n.
+// Shuffle randomly permutes n elements by repeatedly calling swap in the range
+// [0,n). It panics if n < 0.
 func (r *RNG) Shuffle(n int, swap func(i, j int)) {
 	for i := n - 1; i > 0; i-- {
 		swap(i, r.Intn(i+1))
@@ -236,7 +237,8 @@ func Perm(n int) []int {
 	return i
 }
 
-// Shuffle randomly permutes n elements by calling swap on 0 <= i, j < n.
+// Shuffle randomly permutes n elements by repeatedly calling swap in the range
+// [0,n). It panics if n < 0.
 func Shuffle(n int, swap func(i, j int)) {
 	r := rngpool.Get().(*RNG)
 	r.Shuffle(n, swap)
