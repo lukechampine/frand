@@ -122,6 +122,13 @@ func (r *RNG) Perm(n int) []int {
 	return m
 }
 
+// Shuffle randomly permutes n elements by calling swap on 0 <= i, j < n.
+func (r *RNG) Shuffle(n int, swap func(i, j int)) {
+	for i := n - 1; i > 0; i-- {
+		swap(i, r.Intn(i+1))
+	}
+}
+
 // NewCustom returns a new RNG instance seeded with the provided entropy and
 // using the specified buffer size and number of ChaCha rounds. It panics if
 // len(seed) != 32, bufsize < 32, or rounds != 8, 12 or 20.
@@ -227,6 +234,13 @@ func Perm(n int) []int {
 	i := r.Perm(n)
 	rngpool.Put(r)
 	return i
+}
+
+// Shuffle randomly permutes n elements by calling swap on 0 <= i, j < n.
+func Shuffle(n int, swap func(i, j int)) {
+	r := rngpool.Get().(*RNG)
+	r.Shuffle(n, swap)
+	rngpool.Put(r)
 }
 
 // Reader is a global, shared instance of a cryptographically strong pseudo-
