@@ -68,6 +68,24 @@ func (r *RNG) Bytes(n int) []byte {
 	return b
 }
 
+// Entropy256 is a helper function that returns 256 bits of random data.
+func (r *RNG) Entropy256() (entropy [32]byte) {
+	r.Read(entropy[:])
+	return
+}
+
+// Entropy192 is a helper function that returns 192 bits of random data.
+func (r *RNG) Entropy192() (entropy [24]byte) {
+	r.Read(entropy[:])
+	return
+}
+
+// Entropy128 is a helper function that returns 128 bits of random data.
+func (r *RNG) Entropy128() (entropy [16]byte) {
+	r.Read(entropy[:])
+	return
+}
+
 // Uint64n returns a uniform random uint64 in [0,n). It panics if n == 0.
 func (r *RNG) Uint64n(n uint64) uint64 {
 	if n == 0 {
@@ -193,6 +211,27 @@ func Bytes(n int) []byte {
 	r := rngpool.Get().(*RNG)
 	defer rngpool.Put(r)
 	return r.Bytes(n)
+}
+
+// Entropy256 is a helper function that returns 256 bits of random data.
+func Entropy256() [32]byte {
+	r := rngpool.Get().(*RNG)
+	defer rngpool.Put(r)
+	return r.Entropy256()
+}
+
+// Entropy192 is a helper function that returns 192 bits of random data.
+func Entropy192() [24]byte {
+	r := rngpool.Get().(*RNG)
+	defer rngpool.Put(r)
+	return r.Entropy192()
+}
+
+// Entropy128 is a helper function that returns 128 bits of random data.
+func Entropy128() [16]byte {
+	r := rngpool.Get().(*RNG)
+	defer rngpool.Put(r)
+	return r.Entropy128()
 }
 
 // Uint64n returns a uniform random uint64 in [0,n). It panics if n == 0.
