@@ -184,65 +184,58 @@ var rngpool = sync.Pool{
 // Read fills b with random data. It always returns len(b), nil.
 func Read(b []byte) (int, error) {
 	r := rngpool.Get().(*RNG)
-	n, err := r.Read(b)
-	rngpool.Put(r)
-	return n, err
+	defer rngpool.Put(r)
+	return r.Read(b)
 }
 
 // Bytes is a helper function that allocates and returns n bytes of random data.
 func Bytes(n int) []byte {
 	r := rngpool.Get().(*RNG)
-	b := r.Bytes(n)
-	rngpool.Put(r)
-	return b
+	defer rngpool.Put(r)
+	return r.Bytes(n)
 }
 
 // Uint64n returns a uniform random uint64 in [0,n). It panics if n == 0.
 func Uint64n(n uint64) uint64 {
 	r := rngpool.Get().(*RNG)
-	i := r.Uint64n(n)
-	rngpool.Put(r)
-	return i
+	defer rngpool.Put(r)
+	return r.Uint64n(n)
 }
 
 // Intn returns a uniform random int in [0,n). It panics if n <= 0.
 func Intn(n int) int {
 	r := rngpool.Get().(*RNG)
-	i := r.Intn(n)
-	rngpool.Put(r)
-	return i
+	defer rngpool.Put(r)
+	return r.Intn(n)
 }
 
 // BigIntn returns a uniform random *big.Int in [0,n). It panics if n <= 0.
 func BigIntn(n *big.Int) *big.Int {
 	r := rngpool.Get().(*RNG)
-	i := r.BigIntn(n)
-	rngpool.Put(r)
-	return i
+	defer rngpool.Put(r)
+	return r.BigIntn(n)
 }
 
 // Float64 returns a random float64 in [0,1).
 func Float64() float64 {
 	r := rngpool.Get().(*RNG)
-	f := r.Float64()
-	rngpool.Put(r)
-	return f
+	defer rngpool.Put(r)
+	return r.Float64()
 }
 
 // Perm returns a random permutation of the integers [0,n). It panics if n < 0.
 func Perm(n int) []int {
 	r := rngpool.Get().(*RNG)
-	i := r.Perm(n)
-	rngpool.Put(r)
-	return i
+	defer rngpool.Put(r)
+	return r.Perm(n)
 }
 
 // Shuffle randomly permutes n elements by repeatedly calling swap in the range
 // [0,n). It panics if n < 0.
 func Shuffle(n int, swap func(i, j int)) {
 	r := rngpool.Get().(*RNG)
+	defer rngpool.Put(r)
 	r.Shuffle(n, swap)
-	rngpool.Put(r)
 }
 
 // Reader is a global, shared instance of a cryptographically strong pseudo-
