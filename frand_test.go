@@ -278,6 +278,24 @@ func TestShuffle(t *testing.T) {
 	}
 }
 
+// TestSourceSeed tests that a Source can be deterministically re-seeded.
+func TestSourceSeed(t *testing.T) {
+	rng := mrand.New(NewSource())
+	rng.Seed(123)
+	one := make([]int, 100)
+	for i := range one {
+		one[i] = rng.Int()
+	}
+	rng.Seed(123)
+	two := make([]int, 100)
+	for i := range two {
+		two[i] = rng.Int()
+	}
+	if !reflect.DeepEqual(one, two) {
+		t.Fatal("generator did not produce identical output after re-seeding")
+	}
+}
+
 // BenchmarkUint64n benchmarks the Uint64n function for small uint64s.
 func BenchmarkUint64n(b *testing.B) {
 	for i := 0; i < b.N; i++ {
@@ -512,7 +530,7 @@ func BenchmarkReadCrypto4Threads32(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				_, err := rand.Read(buf)
 				if err != nil {
-					b.Fatal(err)
+					panic(err)
 				}
 			}
 			wg.Done()
@@ -540,7 +558,7 @@ func BenchmarkReadCrypto4Threads512kb(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				_, err := rand.Read(buf)
 				if err != nil {
-					b.Fatal(err)
+					panic(err)
 				}
 			}
 			wg.Done()
@@ -568,7 +586,7 @@ func BenchmarkReadCrypto64Threads32(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				_, err := rand.Read(buf)
 				if err != nil {
-					b.Fatal(err)
+					panic(err)
 				}
 			}
 			wg.Done()
@@ -596,7 +614,7 @@ func BenchmarkReadCrypto64Threads512kb(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				_, err := rand.Read(buf)
 				if err != nil {
-					b.Fatal(err)
+					panic(err)
 				}
 			}
 			wg.Done()

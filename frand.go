@@ -284,3 +284,29 @@ var Reader rngReader
 type rngReader struct{}
 
 func (rngReader) Read(b []byte) (int, error) { return Read(b) }
+
+// A Source is a math/rand-compatible source of entropy.
+type Source struct {
+	rng *RNG
+}
+
+// Seed uses the provided seed value to initialize the Source to a
+// deterministic state.
+func (s Source) Seed(i int64) {
+	seed := make([]byte, chacha.KeySize)
+	binary.LittleEndian.PutUint64(seed, uint64(i))
+	for i := range s.rng.buf {
+		s.rng.buf[i] = 0
+	}
+	chacha.XORKeyStream(s.rng.buf, s.rng.buf, make([]byte, chacha.NonceSize), seed, s.rng.rounds)
+	s.rng.n = 0
+}
+
+// Int63 returns a non-negative random 63-bit integer as an int64.
+func (s Source) Int63() int64 { return int64(s.rng.Uint64n(1 << 63)) }
+
+// Uint64 returns a random 64-bit integer.
+func (s Source) Uint64() uint64 { return s.rng.Uint64n(math.MaxUint64) }
+
+// NewSource returns a source for use with the math/rand package.
+func NewSource() Source { return Source{rng: New()} }
