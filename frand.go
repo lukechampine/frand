@@ -303,7 +303,7 @@ func (s *Source) Seed(i int64) {
 		s.rng.buf[i] = 0
 	}
 	chacha.XORKeyStream(s.rng.buf, s.rng.buf, make([]byte, chacha.NonceSize), seed, s.rng.rounds)
-	s.rng.n = 0
+	s.rng.n = chacha.KeySize
 }
 
 // Int63 returns a non-negative random 63-bit integer as an int64.
